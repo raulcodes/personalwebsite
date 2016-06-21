@@ -10,6 +10,10 @@ GET     /resume                                 App.Resume
 
 GET     /writings                               App.Writings
 
+GET     /awsupload                              App.AWSUpload
+
+GET     /code                                   App.Code
+
 # Ignore favicon requests
 GET     /favicon.ico                            404
 

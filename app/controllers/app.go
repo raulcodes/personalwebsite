@@ -17,3 +17,11 @@ func (c App) Resume() revel.Result {
 func (c App) Writings() revel.Result {
 	return c.Render()
 }
+
+func (c App) AWSUpload() revel.Result {
+	return c.Render()
+}
+
+func (c App) Code() revel.Result {
+	return c.Render()
+}

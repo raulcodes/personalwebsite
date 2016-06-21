@@ -1,0 +1,269 @@
+{{set . "title" "AWS"}}
+{{template "header.html" .}}
+
+<body class="landing">
+
+		<!-- Page Wrapper -->
+			<div id="page-wrapper">
+
+				<!-- Header -->
+					<header id="header" class="alt">
+						<h1><a href="index.html">AWS Upload</a></h1>
+						<nav id="nav">
+							<ul>
+								<li class="special">
+									<a href="#menu" class="menuToggle"><span>Menu</span></a>
+									<div id="menu">
+										<ul>
+											<li><a href="/">Home</a></li>
+											<li><a href="https://docs.google.com/document/d/1xxPCAtVpKC5T4ksfcBj7EaAkRGQxLethMGFx-2CsjBA/pub">Resume</a></li>
+											<li><a href="/writings">Writings</a></li>
+										</ul>
+									</div>
+								</li>
+							</ul>
+						</nav>
+					</header>
+
+          <!-- Main -->
+            <article id="main">
+              <header>
+                <h2>S3 File Upload in Go</h2>
+                <p>An implementation of AWS S3 direct file upload using AWS SDK for Go and the revel web framework for Go.</p>
+              </header>
+              <section class="wrapper style5">
+                <div class="inner">
+
+									<!-- HTML generated using hilite.me --><div style="background: #f0f0f0; overflow:auto;width:auto;border:solid gray;border-width:.1em .1em .1em .8em;padding:.2em .6em;"><table><tr><td><pre style="margin: 0; line-height: 125%"> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99</pre></td><td><pre style="margin: 0; line-height: 125%"><span style="color: #007020; font-weight: bold">package</span> controllers
+
+<span style="color: #007020; font-weight: bold">import</span> (
+	<span style="color: #4070a0">&quot;fmt&quot;</span>
+	<span style="color: #4070a0">&quot;compress/gzip&quot;</span>
+	<span style="color: #4070a0">&quot;io&quot;</span>
+        <span style="color: #4070a0">&quot;log&quot;</span>
+        <span style="color: #4070a0">&quot;os&quot;</span>
+
+	<span style="color: #4070a0">&quot;path/filepath&quot;</span>
+
+	<span style="color: #4070a0">&quot;github.com/revel/revel&quot;</span>
+	<span style="color: #4070a0">&quot;github.com/aws/aws-sdk-go/aws&quot;</span>
+        <span style="color: #4070a0">&quot;github.com/aws/aws-sdk-go/aws/session&quot;</span>
+        <span style="color: #4070a0">&quot;github.com/aws/aws-sdk-go/service/s3/s3manager&quot;</span>
+)
+
+<span style="color: #007020; font-weight: bold">func</span> (c Single) HandleUpload(file []<span style="color: #902000">byte</span>) revel.Result {
+
+	<span style="color: #60a0b0; font-style: italic">//Basic file verification. Only checks extension. Recommend using a verification library</span>
+	<span style="color: #60a0b0; font-style: italic">//or better verification.</span>
+
+	<span style="color: #007020; font-weight: bold">var</span> name <span style="color: #902000">string</span> = c.Params.Files[<span style="color: #4070a0">&quot;file&quot;</span>][<span style="color: #40a070">0</span>].Filename
+
+	<span style="color: #60a0b0; font-style: italic">//Path for temp local file location</span>
+	<span style="color: #007020; font-weight: bold">var</span> path <span style="color: #902000">string</span> = <span style="color: #4070a0">&quot;src/myapp/upload/&quot;</span> <span style="color: #666666">+</span> name
+
+	<span style="color: #60a0b0; font-style: italic">//Check extension of file</span>
+	<span style="color: #007020; font-weight: bold">var</span> ext <span style="color: #902000">string</span> = filepath.Ext(name)
+	<span style="color: #007020; font-weight: bold">if</span> (ext <span style="color: #666666">!=</span> <span style="color: #4070a0">&quot;.pdf&quot;</span>) {
+		log.Printf(<span style="color: #4070a0">&quot;File must have a .pdf extension.&quot;</span>)
+		<span style="color: #007020; font-weight: bold">return</span> c.Redirect(Single.Upload)
+	}
+	log.Printf(<span style="color: #4070a0">&quot;extension is &quot;</span> <span style="color: #666666">+</span> ext)
+
+	<span style="color: #60a0b0; font-style: italic">//Creates file at specified path, will be different for you</span>
+	dst, err <span style="color: #666666">:=</span> os.Create(<span style="color: #4070a0">&quot;src/myapp/upload/&quot;</span> <span style="color: #666666">+</span> name)
+	<span style="color: #007020; font-weight: bold">defer</span> dst.Close()
+	<span style="color: #007020; font-weight: bold">if</span> err <span style="color: #666666">!=</span> <span style="color: #007020; font-weight: bold">nil</span> {
+		log.Printf(<span style="color: #4070a0">&quot;error in creating dst&quot;</span>)
+	}
+
+	<span style="color: #60a0b0; font-style: italic">//Writes resume to created destination</span>
+	n2, err <span style="color: #666666">:=</span> dst.Write(avatar)
+	<span style="color: #007020; font-weight: bold">defer</span> dst.Close()
+	<span style="color: #007020; font-weight: bold">if</span> err <span style="color: #666666">!=</span> <span style="color: #007020; font-weight: bold">nil</span> {
+		log.Printf(<span style="color: #4070a0">&quot;error in writing to dst %d&quot;</span>, n2)
+	}
+
+	<span style="color: #60a0b0; font-style: italic">//Uploads file from temp path to s3 bucket</span>
+	UploadFile(name, path)
+
+	err = os.Remove(path)
+	<span style="color: #007020; font-weight: bold">if</span> err <span style="color: #666666">!=</span> <span style="color: #007020; font-weight: bold">nil</span>	{
+		log.Printf(<span style="color: #4070a0">&quot;error removing temp file&quot;</span>)
+	}
+
+	<span style="color: #60a0b0; font-style: italic">//Returns json info of uploaded file, needs to be changed</span>
+	<span style="color: #007020; font-weight: bold">return</span> c.RenderJson(FileInfo{
+		ContentType: c.Params.Files[<span style="color: #4070a0">&quot;avatar&quot;</span>][<span style="color: #40a070">0</span>].Header.Get(<span style="color: #4070a0">&quot;Content-Type&quot;</span>),
+		Filename:    c.Params.Files[<span style="color: #4070a0">&quot;avatar&quot;</span>][<span style="color: #40a070">0</span>].Filename,
+		<span style="color: #60a0b0; font-style: italic">//RealFormat:  format,</span>
+		<span style="color: #60a0b0; font-style: italic">//Resolution:  fmt.Sprintf(&quot;%dx%d&quot;, conf.Width, conf.Height),</span>
+		<span style="color: #60a0b0; font-style: italic">//Size:        len(avatar),</span>
+		Status:      <span style="color: #4070a0">&quot;Successfully uploaded&quot;</span>,
+	})
+}
+
+<span style="color: #007020; font-weight: bold">func</span> UploadFile(key, path <span style="color: #902000">string</span>) {
+	file, err <span style="color: #666666">:=</span> os.Open(path)
+    <span style="color: #007020; font-weight: bold">if</span> err <span style="color: #666666">!=</span> <span style="color: #007020; font-weight: bold">nil</span> {
+        log.Fatal(<span style="color: #4070a0">&quot;Failed to open file&quot;</span>, err)
+    }
+
+    <span style="color: #60a0b0; font-style: italic">// Not required, but you could zip the file before uploading it</span>
+    <span style="color: #60a0b0; font-style: italic">// using io.Pipe read/writer to stream gzip&#39;d file contents.</span>
+    reader, writer <span style="color: #666666">:=</span> io.Pipe()
+    <span style="color: #007020; font-weight: bold">go</span> <span style="color: #007020; font-weight: bold">func</span>() {
+        gw <span style="color: #666666">:=</span> gzip.NewWriter(writer)
+        io.Copy(gw, file)
+
+        file.Close()
+        gw.Close()
+        writer.Close()
+    }()
+
+		<span style="color: #60a0b0; font-style: italic">//Creates new uploader and uploads file passed path location</span>
+    uploader <span style="color: #666666">:=</span> s3manager.NewUploader(session.New(<span style="color: #666666">&amp;</span>aws.Config{Region: aws.String(<span style="color: #4070a0">&quot;us-west-2&quot;</span>)}))
+    result, err <span style="color: #666666">:=</span> uploader.Upload(<span style="color: #666666">&amp;</span>s3manager.UploadInput{
+        Body:   reader,
+        Bucket: aws.String(<span style="color: #4070a0">&quot;yourBucketName&quot;</span>),
+        Key:    aws.String(key),
+    })
+    <span style="color: #007020; font-weight: bold">if</span> err <span style="color: #666666">!=</span> <span style="color: #007020; font-weight: bold">nil</span> {
+        log.Fatalln(<span style="color: #4070a0">&quot;Failed to upload&quot;</span>, err)
+    }
+
+    log.Println(<span style="color: #4070a0">&quot;Successfully uploaded to&quot;</span>, result.Location)
+}
+</pre></td></tr></table></div>
+
+
+
+
+
+								</div>
+							</section>
+						</article>
+				<!-- Footer -->
+					<footer id="footer">
+						<ul class="icons">
+							<li><a href="https://twitter.com/CPUgiraffe" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
+							<li><a href="https://www.facebook.com/raul.camacho.35" class="icon fa-facebook"><span class="label">Facebook</span></a></li>
+							<!-- <li><a href="https://www.instagram.com/giraffecam/" class="icon fa-instagram"><span class="label">Instagram</span></a></li> -->
+							<li><a href="https://dribbble.com/CPUgiraffe" class="icon fa-dribbble"><span class="label">Dribbble</span></a></li>
+							<li><a href="mailto:rcamacho96@gmail.com" class="icon fa-envelope-o"><span class="label">Email</span></a></li>
+						</ul>
+						<ul class="copyright">
+							<li>&copy; Untitled</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
+						</ul>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="public/js/jquery.min.js"></script>
+			<script src="public/js/jquery.scrollex.min.js"></script>
+			<script src="public/js/jquery.scrolly.min.js"></script>
+			<script src="public/js/skel.min.js"></script>
+			<script src="public/js/util.js"></script>
+			<!--[if lte IE 8]><script src="public/js/ie/respond.min.js"></script><![endif]-->
+			<script src="public/js/main.js"></script>
+
+	</body>
+</html>
